@@ -13,7 +13,10 @@ import {
   generateAiText,
 } from '@/lib/api-services/vercelAi'
 import { buildReasoningProviderOptions } from '@/lib/api-services/providerOptionsBuilder'
-import { googleSearchGroundingModels } from '@/features/constants/aiModels'
+import {
+  googleSearchGroundingModels,
+  supportsTemperature,
+} from '@/features/constants/aiModels'
 import { pipeResponse } from '@/utils/pipeResponse'
 import { withAccessPolicy } from '@/lib/accessPolicy/withAccessPolicy'
 import type { PolicyGate } from '@/lib/accessPolicy/withAccessPolicy'
@@ -160,6 +163,10 @@ async function handler(
       reasoningEffort,
       reasoningTokenBudget
     )
+    const modelSupportsTemperature = supportsTemperature(
+      aiService,
+      modifiedModel
+    )
 
     // ストリーミングレスポンスまたは一括レスポンスの生成
     let response: Response
@@ -169,7 +176,7 @@ async function handler(
         registry,
         service: aiService as VercelAIService,
         messages: modifiedMessages,
-        temperature,
+        temperature: modelSupportsTemperature ? temperature : undefined,
         maxTokens,
         options,
         providerOptions,
@@ -180,7 +187,7 @@ async function handler(
         registry,
         service: aiService as VercelAIService,
         messages: modifiedMessages,
-        temperature,
+        temperature: modelSupportsTemperature ? temperature : undefined,
         maxTokens,
         providerOptions,
       })

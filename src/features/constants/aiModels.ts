@@ -19,6 +19,7 @@ interface ModelInfo {
   reasoningEfforts?: ReasoningEffort[]
   /** tokenBudget設定が利用可能か */
   reasoningTokenBudget?: boolean
+  supportsTemperature?: boolean
 }
 
 /**
@@ -92,7 +93,11 @@ const modelDefinitions: Record<AIService, ModelInfo[]> = {
       multiModal: true,
       reasoningEfforts: ['minimal', 'low', 'medium', 'high'],
     },
-    { name: 'gpt-5.3-chat-latest', multiModal: true },
+    {
+      name: 'gpt-5.3-chat-latest',
+      multiModal: true,
+      supportsTemperature: false,
+    },
     {
       name: 'gpt-5.3-codex',
       reasoningEfforts: ['minimal', 'low', 'medium', 'high'],
@@ -956,6 +961,20 @@ export function isReasoningModel(
 
   const info = findModelInfo(service, model)
   return info?.reasoningEfforts !== undefined
+}
+
+/** Returns whether the model accepts the temperature parameter. */
+export function supportsTemperature(
+  service: AIService,
+  model: string,
+  customModel?: boolean
+): boolean {
+  if (service !== 'openai') return true
+
+  const info = customModel ? undefined : findModelInfo(service, model)
+  if (info?.supportsTemperature === false) return false
+
+  return !isReasoningModel(service, model, customModel)
 }
 
 /**

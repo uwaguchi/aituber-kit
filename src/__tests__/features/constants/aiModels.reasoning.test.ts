@@ -5,6 +5,7 @@ import {
   isReasoningModel,
   getReasoningEfforts,
   needsReasoningTokenBudget,
+  supportsTemperature,
 } from '@/features/constants/aiModels'
 
 describe('isReasoningModel', () => {
@@ -114,6 +115,20 @@ describe('isReasoningModel', () => {
     it('Azureはモデルリストが空だがフォールバックで推論対応', () => {
       expect(isReasoningModel('azure', 'any-model')).toBe(true)
     })
+  })
+})
+
+describe('supportsTemperature', () => {
+  it('does not support temperature for gpt-5.3-chat-latest', () => {
+    expect(supportsTemperature('openai', 'gpt-5.3-chat-latest')).toBe(false)
+  })
+
+  it('does not support temperature for OpenAI reasoning models', () => {
+    expect(supportsTemperature('openai', 'gpt-5')).toBe(false)
+  })
+
+  it('supports temperature for OpenAI non-reasoning models', () => {
+    expect(supportsTemperature('openai', 'gpt-4.1')).toBe(true)
   })
 })
 

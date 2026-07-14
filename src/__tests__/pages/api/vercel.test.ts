@@ -217,6 +217,37 @@ describe('/api/ai/vercel handler', () => {
     })
   })
 
+  it('omits temperature for gpt-5.3-chat-latest', async () => {
+    mockModifyMessages.mockReturnValue([{ role: 'user', content: 'hi' }] as any)
+    mockStreamAiText.mockResolvedValue(new Response('stream', { status: 200 }))
+
+    const { req, res } = createMocks({
+      method: 'POST',
+      body: {
+        messages: [],
+        apiKey: 'openai-key',
+        aiService: 'openai',
+        model: 'gpt-5.3-chat-latest',
+        stream: true,
+        temperature: 0.7,
+        maxTokens: 256,
+      },
+    })
+
+    await handler(req as any, res as any)
+
+    expect(mockStreamAiText).toHaveBeenCalledWith({
+      model: 'gpt-5.3-chat-latest',
+      registry: mockRegistry,
+      service: 'openai',
+      messages: [{ role: 'user', content: 'hi' }],
+      temperature: undefined,
+      maxTokens: 256,
+      options: {},
+      providerOptions: undefined,
+    })
+  })
+
   it('does not guard non-azure requests only because AZURE_ENDPOINT is configured', async () => {
     process.env.AZURE_ENDPOINT =
       'https://my-resource.openai.azure.com/openai/deployments/my-deploy/chat/completions?api-version=2024-05-01-preview'

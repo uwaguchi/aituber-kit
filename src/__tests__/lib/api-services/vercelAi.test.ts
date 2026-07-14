@@ -217,6 +217,57 @@ describe('vercelAi service helpers', () => {
       })
     })
 
+    it('moves a string system message to the system option', async () => {
+      const response = new Response('stream-body')
+      mockStreamText.mockResolvedValue({
+        textStream: 'text-stream',
+        toUIMessageStreamResponse: jest.fn().mockReturnValue(response),
+      } as any)
+      const messagesWithSystem: Message[] = [
+        { role: 'system', content: 'Follow these instructions.' },
+        ...testMessages,
+      ]
+
+      await streamAiText({
+        model: 'gpt-4o-mini',
+        registry: mockRegistry as any,
+        service: 'openai',
+        messages: messagesWithSystem,
+        temperature: 0.2,
+        maxTokens: 150,
+      })
+
+      expect(mockStreamText).toHaveBeenCalledWith({
+        model: 'mock-model',
+        system: 'Follow these instructions.',
+        messages: testMessages,
+        temperature: 0.2,
+        maxOutputTokens: 150,
+      })
+    })
+
+    it('does not send temperature when it is undefined', async () => {
+      const response = new Response('stream-body')
+      mockStreamText.mockResolvedValue({
+        textStream: 'text-stream',
+        toUIMessageStreamResponse: jest.fn().mockReturnValue(response),
+      } as any)
+
+      await streamAiText({
+        model: 'gpt-5.3-chat-latest',
+        registry: mockRegistry as any,
+        service: 'openai',
+        messages: testMessages,
+        maxTokens: 150,
+      })
+
+      expect(mockStreamText).toHaveBeenCalledWith({
+        model: 'mock-model',
+        messages: testMessages,
+        maxOutputTokens: 150,
+      })
+    })
+
     it('returns a 500 response when streaming fails', async () => {
       mockStreamText.mockRejectedValue(new Error('network down'))
 
@@ -291,6 +342,49 @@ describe('vercelAi service helpers', () => {
             effort: 'high',
           },
         },
+      })
+    })
+
+    it('moves a string system message to the system option', async () => {
+      mockGenerateText.mockResolvedValue({ text: 'final text' } as any)
+      const messagesWithSystem: Message[] = [
+        { role: 'system', content: 'Follow these instructions.' },
+        ...testMessages,
+      ]
+
+      await generateAiText({
+        model: 'gpt-4.1',
+        registry: mockRegistry as any,
+        service: 'openai',
+        messages: messagesWithSystem,
+        temperature: 0.1,
+        maxTokens: 100,
+      })
+
+      expect(mockGenerateText).toHaveBeenCalledWith({
+        model: 'mock-model',
+        system: 'Follow these instructions.',
+        messages: testMessages,
+        temperature: 0.1,
+        maxOutputTokens: 100,
+      })
+    })
+
+    it('does not send temperature when it is undefined', async () => {
+      mockGenerateText.mockResolvedValue({ text: 'final text' } as any)
+
+      await generateAiText({
+        model: 'gpt-5.3-chat-latest',
+        registry: mockRegistry as any,
+        service: 'openai',
+        messages: testMessages,
+        maxTokens: 100,
+      })
+
+      expect(mockGenerateText).toHaveBeenCalledWith({
+        model: 'mock-model',
+        messages: testMessages,
+        maxOutputTokens: 100,
       })
     })
 

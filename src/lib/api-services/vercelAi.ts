@@ -147,6 +147,22 @@ export function getLanguageModel(
   return registry.languageModel(modelId as `${string}:${string}`)
 }
 
+function separateSystemMessage(messages: Message[]): {
+  system?: string
+  messages: Message[]
+} {
+  const systemMessage = messages.find((message) => message.role === 'system')
+
+  if (typeof systemMessage?.content !== 'string') {
+    return { messages }
+  }
+
+  return {
+    system: systemMessage.content,
+    messages: messages.filter((message) => message.role !== 'system'),
+  }
+}
+
 /**
  * ストリーミングでテキスト生成を行う
  */
@@ -164,18 +180,20 @@ export async function streamAiText({
   registry: AIRegistry
   service: VercelAIService
   messages: Message[]
-  temperature: number
+  temperature?: number
   maxTokens: number
   options?: Record<string, unknown>
   providerOptions?: Record<string, Record<string, unknown>>
 }) {
   try {
     const languageModel = getLanguageModel(registry, service, model, options)
+    const prompt = separateSystemMessage(messages)
 
     const result = await streamText({
       model: languageModel,
-      messages: messages as ModelMessage[],
-      temperature,
+      ...(prompt.system !== undefined && { system: prompt.system }),
+      messages: prompt.messages as ModelMessage[],
+      ...(temperature !== undefined && { temperature }),
       maxOutputTokens: maxTokens,
       ...(providerOptions && {
         providerOptions: providerOptions as Parameters<
@@ -220,17 +238,19 @@ export async function generateAiText({
   registry: AIRegistry
   service: VercelAIService
   messages: Message[]
-  temperature: number
+  temperature?: number
   maxTokens: number
   providerOptions?: Record<string, Record<string, unknown>>
 }) {
   try {
     const languageModel = getLanguageModel(registry, service, model)
+    const prompt = separateSystemMessage(messages)
 
     const result = await generateText({
       model: languageModel,
-      messages: messages as ModelMessage[],
-      temperature,
+      ...(prompt.system !== undefined && { system: prompt.system }),
+      messages: prompt.messages as ModelMessage[],
+      ...(temperature !== undefined && { temperature }),
       maxOutputTokens: maxTokens,
       ...(providerOptions && {
         providerOptions: providerOptions as Parameters<
